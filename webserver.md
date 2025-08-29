@@ -194,10 +194,6 @@ sudo nginx -t
 # Nginx логи
 tail -f /var/log/nginx/access.log
 tail -f /var/log/nginx/error.log
-
-# Apache логи
-tail -f /var/log/apache2/access.log
-tail -f /var/log/apache2/error.log
 ```
 
 ### Несколько сайтов на одном порту
@@ -248,7 +244,7 @@ sudo ln -s /etc/nginx/sites-available/demo-second /etc/nginx/sites-enabled/demo-
 ```
 
 ```bash
-sudo cp /etc/hosts /etc/hosts.bkp
+sudo cp /etc/hosts /etc/hosts.bkp.$(date +%FT%T.%3N)
 
 sudo tee -a /etc/hosts > /dev/null << 'EOF'
 192.168.56.103 first.demo.local
