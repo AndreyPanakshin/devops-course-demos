@@ -2,7 +2,7 @@
 
 ## Введение
 
-Прокси-сервер - это промежуточный сервер, который выступает посредником между клиентом и целевым сервером. Прокси может кэшировать данные, фильтровать трафик, обеспечивать безопасность и балансировать нагрузку.
+Прокси-сервер - сервер-посредник между клиентом и сервером
 
 ## Типы прокси-серверов
 
@@ -16,177 +16,151 @@
 
 ## Nginx как прокси-сервер
 
+### Backend веб-сервер
+
+```bash
+tee backend-headers.py > /dev/null << 'EOF'
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import sys
+
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain; charset=utf-8')
+        self.end_headers()
+        
+        headers_text = "HTTP Request Headers:\n"
+        headers_text += f"Method: {self.command}\n"
+        headers_text += f"Path: {self.path}\n"
+        headers_text += f"Version: {self.request_version}\n\n"
+        
+        for header, value in self.headers.items():
+            headers_text += f"{header}: {value}\n"
+        
+        self.wfile.write(headers_text.encode('utf-8'))
+
+if __name__ == '__main__':
+    port = int(sys.argv[1])
+    server = HTTPServer(('localhost', port), RequestHandler)
+    print(f"Backend server starting on port {port}...")
+    server.serve_forever()
+EOF
+
+tee backend-echo.py > /dev/null << 'EOF'
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import sys
+
+class HelloWorldHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html; charset=utf-8')
+        self.end_headers()
+        self.wfile.write('Hello World'.encode('utf-8'))
+
+def start_server():
+    port = int(sys.argv[1])
+    server = HTTPServer(('localhost', port), HelloWorldHandler)
+    print(f"Backend server starting on port {port}...")
+    server.serve_forever()
+
+if __name__ == '__main__':
+    start_server()
+EOF
+
+tmux new -d -s b1 "python3 backend-headers.py 8808"
+tmux new -d -s b2 "python3 backend-echo.py 8809"
+tmux attach -t b1
+```
+
 ### Reverse Proxy конфигурация
 
-```nginx
+#### Маршрутизация по портам
+```bash
+sudo tee /etc/nginx/sites-available/proxy-ports > /dev/null << 'EOF'
 server {
-    listen 80;
-    server_name proxy.example.com;
-    
+    listen 8001;
     location / {
-        proxy_pass http://backend-server:8080;
+        proxy_pass http://localhost:8808;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
-```
-
-### Балансировка нагрузки
-
-```nginx
-upstream backend {
-    server backend1:8080;
-    server backend2:8080;
-    server backend3:8080;
-}
 
 server {
-    listen 80;
-    
+    listen 8002;
     location / {
-        proxy_pass http://backend;
+        proxy_pass http://localhost:8809;
     }
 }
+EOF
+
+sudo ln -sf /etc/nginx/sites-available/proxy-ports /etc/nginx/sites-enabled/
+sudo systemctl reload nginx
 ```
 
-### Кэширование
-
-```nginx
-proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=my_cache:10m max_size=10g 
-                 inactive=60m use_temp_path=off;
-
-server {
-    location / {
-        proxy_cache my_cache;
-        proxy_cache_valid 200 1h;
-        proxy_cache_valid 404 1m;
-        proxy_pass http://backend;
-    }
-}
-```
-
-## HAProxy
-
-### Установка
-
+#### Маршрутизация по пути
 ```bash
-# Ubuntu/Debian
-sudo apt install haproxy
-
-# CentOS/RHEL
-sudo yum install haproxy
-```
-
-### Базовая конфигурация
-
-```haproxy
-global
-    daemon
-    maxconn 4096
-
-defaults
-    mode http
-    timeout connect 5000ms
-    timeout client 50000ms
-    timeout server 50000ms
-
-frontend web_frontend
-    bind *:80
-    default_backend web_servers
-
-backend web_servers
-    balance roundrobin
-    server web1 192.168.1.10:80 check
-    server web2 192.168.1.11:80 check
-    server web3 192.168.1.12:80 check
-```
-
-## Squid Proxy
-
-### Установка
-
-```bash
-# Ubuntu/Debian
-sudo apt install squid
-
-# CentOS/RHEL
-sudo yum install squid
-```
-
-### Базовая конфигурация
-
-```squid
-# /etc/squid/squid.conf
-http_port 3128
-acl localnet src 192.168.1.0/24
-http_access allow localnet
-http_access deny all
-
-# Кэширование
-cache_dir ufs /var/spool/squid 100 16 256
-maximum_object_size 4096 KB
-```
-
-## SSL Termination
-
-### Nginx SSL Proxy
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name secure.example.com;
-    
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/private.key;
-    
-    location / {
-        proxy_pass http://backend:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-## Мониторинг прокси
-
-### Nginx статистика
-
-```nginx
+sudo tee /etc/nginx/sites-available/proxy-path > /dev/null << 'EOF'
 server {
     listen 8080;
-    location /nginx_status {
-        stub_status;
-        allow 127.0.0.1;
-        deny all;
+    
+    location /headers {
+        proxy_pass http://localhost:8808;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    
+    location /echo {
+        proxy_pass http://localhost:8809;
     }
 }
+EOF
+
+sudo ln -sf /etc/nginx/sites-available/proxy-path /etc/nginx/sites-enabled/
+sudo systemctl reload nginx
 ```
 
-### HAProxy статистика
+#### Маршрутизация по хост нейму
+```bash
+sudo tee /etc/nginx/sites-available/proxy-host > /dev/null << 'EOF'
+server {
+    listen 9898;
+    server_name headers.local;
+    
+    location / {
+        proxy_pass http://localhost:8808;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
 
-```haproxy
-listen stats
-    bind *:8404
-    stats enable
-    stats uri /stats
-    stats refresh 30s
+server {
+    listen 9898;
+    server_name echo.local;
+    
+    location / {
+        proxy_pass http://localhost:8809;
+    }
+}
+EOF
+
+sudo ln -sf /etc/nginx/sites-available/proxy-host /etc/nginx/sites-enabled/
+sudo systemctl reload nginx
 ```
-
-## Тестирование прокси
-
-### Проверка работы
 
 ```bash
-# Тест через прокси
-curl -x http://proxy:3128 http://example.com
+sudo cp /etc/hosts /etc/hosts.bkp.$(date +%FT%T.%3N)
 
-# Проверка заголовков
-curl -H "X-Forwarded-For: 1.2.3.4" http://proxy/
+sudo tee -a /etc/hosts > /dev/null << 'EOF'
+192.168.56.103 headers.local
+192.168.56.103 echo.local
+EOF
 
-# Тест балансировки
-for i in {1..10}; do curl http://proxy/; done
+curl headers.local:9898
 ```
