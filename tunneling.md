@@ -18,12 +18,6 @@ ssh -4 -L 8191:localhost:8809 user@192.168.56.103
 ssh -R 0.0.0.0:8080:localhost:8809 root@course.prafdin.ru
 ```
 
-### Remote Port Forwarding
-
-```bash
-ssh -R 0.0.0.0:8080:localhost:8809 root@course.prafdin.ru
-```
-
 ### Dynamic Port Forwarding
 ```bash
 ssh -D 127.0.0.1:8018 root@course.prafdin.ru
