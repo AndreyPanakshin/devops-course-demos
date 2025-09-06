@@ -66,7 +66,7 @@ events {
 	# multi_accept on;
 }
 
-http {
+http { # https://nginx.org/ru/docs/http/ngx_http_core_module.html#http
 
 	##
 	# Basic Settings
