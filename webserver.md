@@ -254,7 +254,7 @@ EOF
 
 
 ### Curl
-
+https://everything.curl.dev/index.html
 ```
 curl -v 192.168.56.103
 curl -H "Host: second.demo.local" 192.168.56.103
