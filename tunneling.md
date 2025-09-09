@@ -5,6 +5,7 @@
 Туннелирование - это процесс инкапсуляции одного протокола внутри другого для создания безопасного или скрытого канала связи через сеть.
 
 ## SSH Туннели
+https://ekb.it01.su/posts/ssh-tunnelirovaniiu-i-pereadresatsiia-portov
 
 ### Local Port Forwarding
 
