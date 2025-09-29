@@ -17,7 +17,8 @@ gcc -static -o hello main.c
 ## Создание image
 https://docs.docker.com/reference/dockerfile/
 
-## Создание scratch имеджа https://docs.docker.com/build/building/base-images/#create-a-base-image
+## Создание scratch имеджа
+https://docs.docker.com/build/building/base-images/#create-a-base-image
 ```bash
 cat > Dockerfile << EOF
 FROM scratch
