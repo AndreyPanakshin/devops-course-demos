@@ -15,100 +15,121 @@ gcc -static -o hello main.c
 ```
 
 ## Создание image
-https://docs.docker.com/reference/dockerfile/
+- Имедж создается из Dockerfile https://docs.docker.com/reference/dockerfile/  
+- Имедж создается из другого имеджа 
 
-## Создание scratch имеджа
+### Создание scratch имеджа
 https://docs.docker.com/build/building/base-images/#create-a-base-image
 ```bash
 cat > Dockerfile << EOF
 FROM scratch
 EOF
 
-docker build -t hello-scratch:empty . # -t Name and optionally a tag
+docker build -t hello-scratch . # -t Name and optionally a tag
 ```
 
-## Создание пустого контейнера
+### Создание пустого контейнера
 ```bash
-docker create --name scratch_test --entrypoint /hello hello-scratch:empty
-docker export scratch_test -o scratch_test.tar
-mkdir out
-tar xf scratch_test.tar -C out/
+docker create --name scratch-test --entrypoint /hello hello-scratch
 
-docker cp hello scratch_test:/hello
-rm -rf scratch_test.tar
-rm -rf out/*
-docker export scratch_test -o scratch_test.tar
-tar xf scratch_test.tar -C out/
+docker ps -a
 
-docker start scratch_test
-docker inspect scratch_test
-docker rm scratch_test
-cd ..
+# https://docs.docker.com/reference/api/engine/version/v1.51/#tag/Container/operation/ContainerList
+curl --silent -XGET --unix-socket /run/docker.sock http://localhost/containers/json?all=true | jq . 
+
+docker export scratch-test -o scratch-test.tar
+mkdir first
+tar xf scratch-test.tar -C first/
+
+docker cp hello scratch-test:/hello
+
+docker export scratch-test -o scratch-test-with-hello.tar
+mkdir second
+tar xf scratch-test-with-hello.tar -C second/
+
+docker start scratch-test
+docker logs scratch-test
+docker start scratch-test -a
+
+docker inspect scratch-test
 ```
 
-## Создание имеджа с единственным исполняемым файлом
+### Создание имеджа с единственным исполняемым файлом
 ```bash
-mkdir second 
-cp hello second/
-cd second
 cat > Dockerfile << EOF
 FROM scratch
 COPY hello /hello
 ENTRYPOINT ["/hello"]
 EOF
 
-docker build -t hello-scratch:hello . # -t Name and optionally a tag
+docker build -t hello-img . # -t Name and optionally a tag
 
-docker save hello-scratch:hello -o image_scratch_test.tar
-mkdir image_out
-tar xf image_scratch_test.tar -C image_out/
+docker save hello-img -o image_scratch-test.tar
+mkdir out_image
+tar xf image_scratch-test.tar -C out_image
+
+mkdir layer 
+tar xf out_image/blobs/sha256/3551f8658e6915f7fc0ccb07cef4a590b61a0c2788058688b8c818b002fb0174 -C layer
 ```
 
 ```bash
-docker create --name scratch_test hello-scratch:hello
-docker export scratch_test -o scratch_test.tar
+docker create --name hello-test hello-img
+docker export hello-test -o hello-test.tar
 mkdir out
-tar xf scratch_test.tar -C out/
+tar xf hello-test.tar -C out/
 ```
 
-[//]: # (TODO: https://github.com/wagoodman/dive)
+## Имеджи
+- Имеджи состояни из слоев https://docs.docker.com/engine/storage/drivers/
+- Слой это набор изменений файловой системы
 
-# Имеджи
-https://docs.docker.com/engine/storage/drivers/
-
-## Имедж состоит из слоев
+### Имедж состоит из слоев
 ```bash
-docker inspect hello-scratch:hello  | grep -A 5 RootFS
-cat /var/lib/docker/image/overlay2/layerdb/sha256/<Docker Image Layer ID>/cache-id
+docker inspect hello-img  | grep -A 5 RootFS
+cat /var/lib/docker/image/overlay2/layerdb/sha256/<Docker Image Layer ID>/cache-id;echo
 ls -la /var/lib/docker/overlay2/<Overlay Layer ID>/diff
+
+dive hello-img
 ```
 
-## Файловая система контейнера это writable слой + слои имеджа
+### Файловая система контейнера это writable слой + слои имеджа
 ```bash
-docker inspect scratch_test  | grep  Dir
-```
-LowerDir - Слои из имеджа + служебный init слой
-UpperDir - Writable слой
-MergedDir - Итоговая ФС
+docker inspect hello-test  | grep  Dir
 
-## Благодаря слоистой ФС экономим диск
+docker inspect hello-scratch  | grep  Dir
+```
+- LowerDir - Слои из имеджа + служебный init слой
+- UpperDir - Writable слой
+- MergedDir - Итоговая ФС
+
+
+### Благодаря слоистой ФС экономим диск
 ```bash
-docker pull nginx:latest
-docker run -d --name nginx1 nginx:latest
-docker run -d --name nginx2 nginx:latest
-docker run -d --name nginx3 nginx:latest
+docker pull nginx
+dive nginx
+
+du -sh /var/lib/docker/overlay2/
+
+docker pull nginx:alpine
+
+docker run -d --name nginx1 nginx
+docker run -d --name nginx2 nginx
+docker run -d --name nginx3 nginx
 
 docker inspect nginx1 | grep LowerDir > nginx1.txt
 docker inspect nginx2 | grep LowerDir > nginx2.txt
 docker inspect nginx3 | grep LowerDir > nginx3.txt
 vimdiff nginx1.txt nginx2.txt
 vimdiff nginx1.txt nginx3.txt
+
+docker system df
+# du -sh /var/lib/docker/overlay2
 ```
 
-## Сopy-on-Write strategy
+### Сopy-on-Write strategy
 ```bash
 docker exec -it nginx1 ls
-docker exec -it nginx1 bash
+docker exec -it nginx1 bash 
 docker inspect nginx1 | grep UpperDir
 ```
 
@@ -125,11 +146,7 @@ Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 EOF
 ```
 
-```bash
-docker inspect nginx1 | grep UpperDir
-```
-
-# Registry
+## Registry
 ```bash
 docker images
 
@@ -137,12 +154,11 @@ docker tag nginx:latest abrakadabra:latest
 
 # https://hub.docker.com/repository
 docker login
-docker tag <old tag> <new tag>
-docker push <new tag>
+docker push abrakadabra:latest
 
 docker pull nginx
 docker pull docker.io/nginx:latest
 ```
 
-# Dockerfile
+## Dockerfile
 https://docs.docker.com/reference/dockerfile/
