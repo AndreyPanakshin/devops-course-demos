@@ -1,12 +1,12 @@
 ## Access to internet (SNAT)
 
 ```bash
-sudo tcpdump -i enp0s9 icmp -nn -s 0 -vv -X -tttt
+sudo tcpdump -i vboxnet1 icmp -nn -s 0 -vv -X -tttt
 ```
 
 ```bash
-docker run -it --rm nginx:alpine bash
-ping -c 1 192.168.57.5
+docker run -it --rm nginx:alpine sh
+ping -c 1 192.168.57.1
 ```
 
 ## Port publishing (DNAT)

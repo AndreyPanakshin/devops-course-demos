@@ -19,5 +19,5 @@ docker exec nginx_n2 ip -4 a
 
 
 docker run --rm -d --name nginx_n3 nginx:alpine
-docker exec nginx_n3 ping -c 1 
+docker exec nginx_n3 ping -c 1 172.17.0.2
 ```
