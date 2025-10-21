@@ -50,8 +50,5 @@ ip netns exec ns2 ip addr add 10.10.10.2/24 dev veth2b
 ip netns exec ns3 ip addr add 10.10.10.3/24 dev veth3b
 ip netns exec ns4 ip addr add 10.10.10.4/24 dev veth4b
 
-ip addr add 10.10.10.11/24 dev veth1a
-ip addr add 10.10.10.22/24 dev veth2a
-ip addr add 10.10.10.33/24 dev veth3a
-ip addr add 10.10.10.44/24 dev veth4a
+ip addr add 10.10.10.55/24 dev br0
 ```
