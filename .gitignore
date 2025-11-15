@@ -1,0 +1,41 @@
+# Common
+*rsa*
+*.zip
+
+# === Terraform working directory ===
+.terraform/
+.terraform.lock.hcl
+
+# === Local variable overrides ===
+# These files are only for local developer settings, never commit them
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# === State files (contain secrets!) ===
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate
+*.tfstate.*
+
+# === Crash logs ===
+crash.log
+crash.*.log
+
+# === Plan outputs ===
+tfplan
+*.tfplan
+plan.out
+
+# === Sensitive files ===
+secret.tf
+secrets.tf
+*.pem
+*.key
+
+# === Editor / OS clutter ===
+.DS_Store
+Thumbs.db
