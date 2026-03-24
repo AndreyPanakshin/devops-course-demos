@@ -1,0 +1,7 @@
+FROM ubuntu
+
+COPY script.sh .
+
+ADD https://github.com/prafdin/for-test-only.git .
+
+CMD ./script.sh

@@ -1,0 +1,15 @@
+# syntax=docker/dockerfile:1
+
+# Stage 1: builder
+FROM gcc:13 AS builder
+WORKDIR /app
+RUN apt-get update && apt-get install -y cmake build-essential && rm -rf /var/lib/apt/lists/*
+COPY CMakeLists.txt .
+COPY src/ src/
+RUN cmake . && make
+
+# Stage 2: final
+FROM ubuntu
+RUN apt-get update && apt-get install -y libstdc++6
+COPY --from=builder /app/hello /hello
+CMD /hello
