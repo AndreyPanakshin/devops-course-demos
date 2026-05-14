@@ -21,6 +21,7 @@ todo = "todo_app.main:app"
 dev = [
     "pytest>=8.0.0",
     "build>=1.0.0",
+    "ruff>=0.1.0",
 ]
 
 [build-system]
@@ -33,3 +34,9 @@ pythonpath = ["."]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["todo_app*"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"] # Standard flake8 rules + isort

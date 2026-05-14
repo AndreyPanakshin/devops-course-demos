@@ -1,10 +1,10 @@
-import typer
 from pathlib import Path
-from typing import List, Optional
 from uuid import UUID
 
-from todo_app.models import Task
+import typer
+
 from todo_app.database import load_tasks, save_tasks
+from todo_app.models import Task
 
 # Define the data file path
 # Use a default filename in the user's home directory for convenience
@@ -22,7 +22,9 @@ def main():
     Path(APP_DIR).mkdir(parents=True, exist_ok=True)
 
 @app.command()
-def add(description: str = typer.Argument(..., help="Description of the task.")) -> None:
+def add(
+    description: str = typer.Argument(..., help="Description of the task.")
+) -> None:
     """
     Adds a new task to the todo list.
     """
@@ -48,7 +50,9 @@ def list() -> None:
         typer.echo(f"  {status} {task.description} (ID: {task.id})")
 
 @app.command()
-def complete(task_id: UUID = typer.Argument(..., help="The ID of the task to complete.")) -> None:
+def complete(
+    task_id: UUID = typer.Argument(..., help="The ID of the task to complete.")
+) -> None:
     """
     Marks a task as completed.
     """
@@ -59,7 +63,7 @@ def complete(task_id: UUID = typer.Argument(..., help="The ID of the task to com
             task.completed = True
             found = True
             break
-    
+
     if found:
         save_tasks(DATA_FILE, tasks)
         typer.echo(f"Task {task_id} marked as completed.")

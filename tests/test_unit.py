@@ -1,5 +1,5 @@
-import pytest
 from uuid import UUID
+
 from todo_app.models import Task
 
 

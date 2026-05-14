@@ -71,6 +71,20 @@ pytest tests/test_unit.py
 pytest tests/test_integration.py
 ```
 
+### Linting
+
+This project uses `ruff` for linting and formatting.
+
+**Check for linting errors:**
+```bash
+ruff check .
+```
+
+**Automatically fix errors:**
+```bash
+ruff check . --fix
+```
+
 ### Building the Project
 
 The project is configured for packaging with `build`. To create a source distribution and a wheel:

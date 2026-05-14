@@ -1,11 +1,11 @@
+import json
+from pathlib import Path
+from typing import List
+
 import pytest
 from typer.testing import CliRunner
-from pathlib import Path
-from typing import Generator, List
-import json
 
-from todo_app.main import app, DATA_FILE, APP_DIR
-from todo_app.database import UUIDEncoder
+from todo_app.main import app
 from todo_app.models import Task
 
 
@@ -72,10 +72,10 @@ def test_complete_task(runner: CliRunner, temp_data_file: Path):
     # Add a task
     add_result = runner.invoke(app, ["add", "Task to complete"])
     assert add_result.exit_code == 0
-    
+
     # Extract UUID from output
     task_id_str = add_result.stdout.split("(ID: ")[1].split(")")[0].strip()
-    
+
     # Complete the task
     complete_result = runner.invoke(app, ["complete", task_id_str])
     assert complete_result.exit_code == 0
@@ -99,8 +99,9 @@ def test_complete_non_existent_task(runner: CliRunner, temp_data_file: Path):
     """
     non_existent_id = "12345678-1234-5678-1234-567812345678" # A random UUID
     result = runner.invoke(app, ["complete", non_existent_id])
-    assert result.exit_code == 0 # Typer commands often exit with 0 even on functional errors
+    # Typer commands often exit with 0 even on functional errors
+    assert result.exit_code == 0
     assert f"Task with ID {non_existent_id} not found." in result.stderr
-    
+
     tasks_in_file = get_tasks_from_file(temp_data_file)
     assert len(tasks_in_file) == 0 # No tasks should have been added
