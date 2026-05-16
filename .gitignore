@@ -1,0 +1,38 @@
+# CMake build directory
+build/
+
+# CMake-generated files
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+Makefile
+cmake_install.cmake
+install_manifest.txt
+*.cbp # Code::Blocks project files
+*.depend # Dependency files
+
+# Executables and Libraries (typically inside build/)
+*.o
+*.a
+*.so
+*.lo
+*.la
+*.dll
+*.dSYM # Mac OS debug symbols
+
+# IDE specific files
+.idea/
+*.swp
+*~
+.#*
+.vscode/
+
+# Package files
+*.deb
+*.rpm
+*.tgz
+*.zip
+*.tar.gz
+
+# Test results
+test_output/
